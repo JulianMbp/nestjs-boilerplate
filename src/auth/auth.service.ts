@@ -24,6 +24,7 @@ import { StatusEnum } from '../statuses/statuses.enum';
 import { User } from '../users/domain/user';
 import { UsersService } from '../users/users.service';
 import { NullableType } from '../utils/types/nullable.type';
+import { isValidUuidAnyVersion } from '../utils/uuid-validator';
 import { AuthProvidersEnum } from './auth-providers.enum';
 import { AuthEmailLoginIngenieriaDto } from './dto/auth-email-login-ingenieria.dto';
 import { AuthEmailLoginDto } from './dto/auth-email-login.dto';
@@ -32,6 +33,7 @@ import { AuthUpdateDto } from './dto/auth-update.dto';
 import { LoginResponseDto } from './dto/login-response.dto';
 import { JwtPayloadType } from './strategies/types/jwt-payload.type';
 import { JwtRefreshPayloadType } from './strategies/types/jwt-refresh-payload.type';
+import { SupabaseService } from './supabase.service';
 
 @Injectable()
 export class AuthService {
@@ -41,6 +43,7 @@ export class AuthService {
     private sessionService: SessionService,
     private mailService: MailService,
     private configService: ConfigService<AllConfigType>,
+    private supabaseService: SupabaseService,
     @InjectRepository(ObraUsuarioEntity)
     private readonly obraUsuarioRepository: Repository<ObraUsuarioEntity>,
   ) {}
@@ -99,11 +102,23 @@ export class AuthService {
       hash,
     });
 
+    // Fetch Supabase UUID for multi-tenant RLS
+    let userUuid: string | undefined;
+    try {
+      if (user.email) {
+        userUuid = await this.supabaseService.getUserSupabaseUuid(user.email);
+      }
+    } catch (error) {
+      // Log error but don't fail login if Supabase is unavailable
+      console.error('Failed to fetch Supabase UUID:', error);
+    }
+
     const { token, refreshToken, tokenExpires } = await this.getTokensData({
       id: user.id,
       role: user.role,
       sessionId: session.id,
       hash,
+      user_uuid: userUuid,
     });
 
     return {
@@ -164,6 +179,16 @@ export class AuthService {
     // Si se especificó una obra, verificar que el usuario tenga acceso
     const obraId: string | undefined = loginDto.obraId;
     if (obraId && typeof user.id === 'number') {
+      // Validate obra_id is a valid UUID
+      if (!isValidUuidAnyVersion(obraId)) {
+        throw new UnprocessableEntityException({
+          status: HttpStatus.UNPROCESSABLE_ENTITY,
+          errors: {
+            obra_id: 'invalidUuid',
+          },
+        });
+      }
+
       const asignacion = await this.obraUsuarioRepository.findOne({
         where: {
           user: { id: user.id as number },
@@ -192,6 +217,37 @@ export class AuthService {
       hash,
     });
 
+    // Fetch Supabase UUID for multi-tenant RLS
+    let userUuid: string | undefined;
+    try {
+      if (user.email) {
+        userUuid = await this.supabaseService.getUserSupabaseUuid(user.email);
+
+        // If obra_id is provided, validate user has access in Supabase too
+        if (obraId && userUuid) {
+          const hasAccess = await this.supabaseService.validateUserObraAccess(
+            userUuid,
+            obraId,
+          );
+          if (!hasAccess) {
+            throw new UnauthorizedException({
+              status: HttpStatus.UNAUTHORIZED,
+              errors: {
+                obra: 'noAccessInSupabase',
+              },
+            });
+          }
+        }
+      }
+    } catch (error) {
+      // If it's an UnauthorizedException, re-throw it
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      // Log error but don't fail login if Supabase is unavailable
+      console.error('Failed to fetch Supabase UUID:', error);
+    }
+
     const { token, refreshToken, tokenExpires } = await this.getTokensData({
       id: user.id,
       role: user.role,
@@ -199,6 +255,7 @@ export class AuthService {
       hash,
       email: user.email,
       obra_id: obraId,
+      user_uuid: userUuid,
     });
 
     return {
@@ -652,6 +709,7 @@ export class AuthService {
     hash: Session['hash'];
     email?: User['email'];
     obra_id?: string;
+    user_uuid?: string;
   }) {
     const tokenExpiresIn = this.configService.getOrThrow('auth.expires', {
       infer: true,
@@ -667,6 +725,7 @@ export class AuthService {
           sessionId: data.sessionId,
           ...(data.email && { email: data.email }),
           ...(data.obra_id && { obra_id: data.obra_id }),
+          ...(data.user_uuid && { user_uuid: data.user_uuid }),
         },
         {
           secret: this.configService.getOrThrow('auth.secret', { infer: true }),

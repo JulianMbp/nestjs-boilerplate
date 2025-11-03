@@ -11,6 +11,7 @@ import { AuthService } from './auth.service';
 import { AnonymousStrategy } from './strategies/anonymous.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { SupabaseService } from './supabase.service';
 
 @Module({
   imports: [
@@ -22,7 +23,13 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     TypeOrmModule.forFeature([ObraUsuarioEntity]),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, JwtRefreshStrategy, AnonymousStrategy],
-  exports: [AuthService],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    JwtRefreshStrategy,
+    AnonymousStrategy,
+    SupabaseService,
+  ],
+  exports: [AuthService, SupabaseService],
 })
 export class AuthModule {}

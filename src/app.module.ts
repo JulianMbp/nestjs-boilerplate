@@ -14,6 +14,7 @@ import { AuthModule } from './auth/auth.module';
 import authConfig from './auth/config/auth.config';
 import appConfig from './config/app.config';
 import { AllConfigType } from './config/config.type';
+import supabaseConfig from './config/supabase.config';
 import databaseConfig from './database/config/database.config';
 import { TypeOrmConfigService } from './database/typeorm-config.service';
 import fileConfig from './files/config/file.config';
@@ -46,6 +47,7 @@ const infrastructureDatabaseModule = TypeOrmModule.forRootAsync({
         facebookConfig,
         googleConfig,
         appleConfig,
+        supabaseConfig,
       ],
       envFilePath: ['.env'],
     }),

@@ -9,17 +9,23 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { ObraEntity } from '../../../../../obras/infrastructure/persistence/relational/entities/obra.entity';
-import { RoleEntity } from '../../../../../roles/infrastructure/persistence/relational/entities/role.entity';
 import { UserEntity } from '../../../../../users/infrastructure/persistence/relational/entities/user.entity';
 import { EntityRelationalHelper } from '../../../../../utils/relational-entity-helper';
 
 @Entity({
   name: 'obra_usuario',
 })
-@Index(['user', 'obra', 'role'])
 export class ObraUsuarioEntity extends EntityRelationalHelper {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column({ type: 'int' })
+  @Index()
+  user_id: number;
+
+  @Column({ type: 'uuid' })
+  @Index()
+  obra_id: string;
 
   @ManyToOne(() => UserEntity, {
     eager: false,
@@ -27,24 +33,18 @@ export class ObraUsuarioEntity extends EntityRelationalHelper {
   @JoinColumn({ name: 'user_id' })
   user: UserEntity;
 
-  @ManyToOne(() => ObraEntity, {
+  @ManyToOne(() => ObraEntity, (obra) => obra.asignaciones, {
     eager: false,
   })
   @JoinColumn({ name: 'obra_id' })
   obra: ObraEntity;
 
-  @ManyToOne(() => RoleEntity, {
-    eager: false,
-  })
-  @JoinColumn({ name: 'role_id' })
-  role: RoleEntity;
+  @Column({ type: String, nullable: true })
+  role_name?: string;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-  fechaAsignacion: Date;
+  @CreateDateColumn({ type: 'timestamp with time zone' })
+  created_at: Date;
 
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
+  @UpdateDateColumn({ type: 'timestamp with time zone' })
+  updated_at: Date;
 }

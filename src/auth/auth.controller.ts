@@ -17,14 +17,15 @@ import { User } from '../users/domain/user';
 import { NullableType } from '../utils/types/nullable.type';
 import { AuthService } from './auth.service';
 import { AuthConfirmEmailDto } from './dto/auth-confirm-email.dto';
-import { AuthEmailLoginIngenieriaDto } from './dto/auth-email-login-ingenieria.dto';
 import { AuthEmailLoginDto } from './dto/auth-email-login.dto';
 import { AuthForgotPasswordDto } from './dto/auth-forgot-password.dto';
 import { AuthRegisterLoginDto } from './dto/auth-register-login.dto';
 import { AuthResetPasswordDto } from './dto/auth-reset-password.dto';
 import { AuthUpdateDto } from './dto/auth-update.dto';
 import { LoginResponseDto } from './dto/login-response.dto';
+import { ObraConRoleDto } from './dto/obra-con-role.dto';
 import { RefreshResponseDto } from './dto/refresh-response.dto';
+import { SwitchObraDto } from './dto/switch-obra.dto';
 
 @ApiTags('Auth')
 @Controller({
@@ -37,31 +38,17 @@ export class AuthController {
   @SerializeOptions({
     groups: ['me'],
   })
-  @Post('email/login')
+  @Post('login')
   @ApiOkResponse({
     type: LoginResponseDto,
+    description: 'User login with email and password',
   })
   @HttpCode(HttpStatus.OK)
   public login(@Body() loginDto: AuthEmailLoginDto): Promise<LoginResponseDto> {
     return this.service.validateLogin(loginDto);
   }
 
-  @SerializeOptions({
-    groups: ['me'],
-  })
-  @Post('ingenieria/login')
-  @ApiOkResponse({
-    type: LoginResponseDto,
-    description: 'Login para IngenierIA con soporte de obra_id',
-  })
-  @HttpCode(HttpStatus.OK)
-  public loginIngenieria(
-    @Body() loginDto: AuthEmailLoginIngenieriaDto,
-  ): Promise<LoginResponseDto> {
-    return this.service.validateLoginIngenieria(loginDto);
-  }
-
-  @Post('email/register')
+  @Post('register')
   @HttpCode(HttpStatus.NO_CONTENT)
   async register(@Body() createUserDto: AuthRegisterLoginDto): Promise<void> {
     return this.service.register(createUserDto);
@@ -164,5 +151,35 @@ export class AuthController {
   @HttpCode(HttpStatus.NO_CONTENT)
   public async delete(@Request() request): Promise<void> {
     return this.service.softDelete(request.user);
+  }
+
+  @ApiBearerAuth()
+  @Get('my-obras')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiOkResponse({
+    type: [ObraConRoleDto],
+    description: 'List all obras the user has access to',
+  })
+  @HttpCode(HttpStatus.OK)
+  public async getMyObras(@Request() request): Promise<ObraConRoleDto[]> {
+    return this.service.getMyObras(request.user.id);
+  }
+
+  @ApiBearerAuth()
+  @Post('switch-obra')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiOkResponse({
+    description: 'Switch to a different obra context',
+  })
+  @HttpCode(HttpStatus.OK)
+  public async switchObra(
+    @Request() request,
+    @Body() switchObraDto: SwitchObraDto,
+  ): Promise<{ token: string; tokenExpires: number; obraId: string }> {
+    return this.service.switchObra(
+      request.user.id,
+      switchObraDto.obraId,
+      request.user.sessionId,
+    );
   }
 }

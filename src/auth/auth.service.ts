@@ -24,16 +24,14 @@ import { StatusEnum } from '../statuses/statuses.enum';
 import { User } from '../users/domain/user';
 import { UsersService } from '../users/users.service';
 import { NullableType } from '../utils/types/nullable.type';
-import { isValidUuidAnyVersion } from '../utils/uuid-validator';
 import { AuthProvidersEnum } from './auth-providers.enum';
-import { AuthEmailLoginIngenieriaDto } from './dto/auth-email-login-ingenieria.dto';
 import { AuthEmailLoginDto } from './dto/auth-email-login.dto';
 import { AuthRegisterLoginDto } from './dto/auth-register-login.dto';
 import { AuthUpdateDto } from './dto/auth-update.dto';
 import { LoginResponseDto } from './dto/login-response.dto';
+import { ObraConRoleDto } from './dto/obra-con-role.dto';
 import { JwtPayloadType } from './strategies/types/jwt-payload.type';
 import { JwtRefreshPayloadType } from './strategies/types/jwt-refresh-payload.type';
-import { SupabaseService } from './supabase.service';
 
 @Injectable()
 export class AuthService {
@@ -43,9 +41,8 @@ export class AuthService {
     private sessionService: SessionService,
     private mailService: MailService,
     private configService: ConfigService<AllConfigType>,
-    private supabaseService: SupabaseService,
     @InjectRepository(ObraUsuarioEntity)
-    private readonly obraUsuarioRepository: Repository<ObraUsuarioEntity>,
+    private obraUsuarioRepository: Repository<ObraUsuarioEntity>,
   ) {}
 
   async validateLogin(loginDto: AuthEmailLoginDto): Promise<LoginResponseDto> {
@@ -102,160 +99,12 @@ export class AuthService {
       hash,
     });
 
-    // Fetch Supabase UUID for multi-tenant RLS
-    let userUuid: string | undefined;
-    try {
-      if (user.email) {
-        userUuid = await this.supabaseService.getUserSupabaseUuid(user.email);
-      }
-    } catch (error) {
-      // Log error but don't fail login if Supabase is unavailable
-      console.error('Failed to fetch Supabase UUID:', error);
-    }
-
     const { token, refreshToken, tokenExpires } = await this.getTokensData({
       id: user.id,
+      email: user.email!,
       role: user.role,
       sessionId: session.id,
       hash,
-      user_uuid: userUuid,
-    });
-
-    return {
-      refreshToken,
-      token,
-      tokenExpires,
-      user,
-    };
-  }
-
-  // Login para IngenierIA con soporte de obra_id opcional
-  async validateLoginIngenieria(
-    loginDto: AuthEmailLoginIngenieriaDto,
-  ): Promise<LoginResponseDto> {
-    const user = await this.usersService.findByEmail(loginDto.email);
-
-    if (!user) {
-      throw new UnprocessableEntityException({
-        status: HttpStatus.UNPROCESSABLE_ENTITY,
-        errors: {
-          email: 'notFound',
-        },
-      });
-    }
-
-    if (user.provider !== AuthProvidersEnum.email) {
-      throw new UnprocessableEntityException({
-        status: HttpStatus.UNPROCESSABLE_ENTITY,
-        errors: {
-          email: `needLoginViaProvider:${user.provider}`,
-        },
-      });
-    }
-
-    if (!user.password) {
-      throw new UnprocessableEntityException({
-        status: HttpStatus.UNPROCESSABLE_ENTITY,
-        errors: {
-          password: 'incorrectPassword',
-        },
-      });
-    }
-
-    const isValidPassword = await bcrypt.compare(
-      loginDto.password,
-      user.password,
-    );
-
-    if (!isValidPassword) {
-      throw new UnprocessableEntityException({
-        status: HttpStatus.UNPROCESSABLE_ENTITY,
-        errors: {
-          password: 'incorrectPassword',
-        },
-      });
-    }
-
-    // Si se especificó una obra, verificar que el usuario tenga acceso
-    const obraId: string | undefined = loginDto.obraId;
-    if (obraId && typeof user.id === 'number') {
-      // Validate obra_id is a valid UUID
-      if (!isValidUuidAnyVersion(obraId)) {
-        throw new UnprocessableEntityException({
-          status: HttpStatus.UNPROCESSABLE_ENTITY,
-          errors: {
-            obra_id: 'invalidUuid',
-          },
-        });
-      }
-
-      const asignacion = await this.obraUsuarioRepository.findOne({
-        where: {
-          user: { id: user.id as number },
-          obra: { id: obraId },
-        },
-        relations: ['role', 'obra'],
-      });
-
-      if (!asignacion) {
-        throw new UnauthorizedException({
-          status: HttpStatus.UNAUTHORIZED,
-          errors: {
-            obra: 'noAccess',
-          },
-        });
-      }
-    }
-
-    const hash = crypto
-      .createHash('sha256')
-      .update(randomStringGenerator())
-      .digest('hex');
-
-    const session = await this.sessionService.create({
-      user,
-      hash,
-    });
-
-    // Fetch Supabase UUID for multi-tenant RLS
-    let userUuid: string | undefined;
-    try {
-      if (user.email) {
-        userUuid = await this.supabaseService.getUserSupabaseUuid(user.email);
-
-        // If obra_id is provided, validate user has access in Supabase too
-        if (obraId && userUuid) {
-          const hasAccess = await this.supabaseService.validateUserObraAccess(
-            userUuid,
-            obraId,
-          );
-          if (!hasAccess) {
-            throw new UnauthorizedException({
-              status: HttpStatus.UNAUTHORIZED,
-              errors: {
-                obra: 'noAccessInSupabase',
-              },
-            });
-          }
-        }
-      }
-    } catch (error) {
-      // If it's an UnauthorizedException, re-throw it
-      if (error instanceof UnauthorizedException) {
-        throw error;
-      }
-      // Log error but don't fail login if Supabase is unavailable
-      console.error('Failed to fetch Supabase UUID:', error);
-    }
-
-    const { token, refreshToken, tokenExpires } = await this.getTokensData({
-      id: user.id,
-      role: user.role,
-      sessionId: session.id,
-      hash,
-      email: user.email,
-      obra_id: obraId,
-      user_uuid: userUuid,
     });
 
     return {
@@ -338,6 +187,7 @@ export class AuthService {
       tokenExpires,
     } = await this.getTokensData({
       id: user.id,
+      email: user.email!,
       role: user.role,
       sessionId: session.id,
       hash,
@@ -680,6 +530,7 @@ export class AuthService {
 
     const { token, refreshToken, tokenExpires } = await this.getTokensData({
       id: session.user.id,
+      email: user.email!,
       role: {
         id: user.role.id,
       },
@@ -704,13 +555,15 @@ export class AuthService {
 
   private async getTokensData(data: {
     id: User['id'];
+    email: string;
     role: User['role'];
     sessionId: Session['id'];
     hash: Session['hash'];
-    email?: User['email'];
-    obra_id?: string;
-    user_uuid?: string;
-  }) {
+  }): Promise<{
+    token: string;
+    refreshToken: string;
+    tokenExpires: number;
+  }> {
     const tokenExpiresIn = this.configService.getOrThrow('auth.expires', {
       infer: true,
     });
@@ -721,11 +574,9 @@ export class AuthService {
       await this.jwtService.signAsync(
         {
           id: data.id,
+          email: data.email,
           role: data.role,
           sessionId: data.sessionId,
-          ...(data.email && { email: data.email }),
-          ...(data.obra_id && { obra_id: data.obra_id }),
-          ...(data.user_uuid && { user_uuid: data.user_uuid }),
         },
         {
           secret: this.configService.getOrThrow('auth.secret', { infer: true }),
@@ -752,6 +603,86 @@ export class AuthService {
       token,
       refreshToken,
       tokenExpires,
+    };
+  }
+
+  /**
+   * Retorna todas las obras a las que el usuario tiene acceso
+   */
+  async getMyObras(userId: number): Promise<ObraConRoleDto[]> {
+    const asignaciones = await this.obraUsuarioRepository.find({
+      where: { user_id: userId },
+      relations: ['obra'],
+    });
+
+    return asignaciones.map((asignacion) => ({
+      id: asignacion.obra.id,
+      nombre: asignacion.obra.nombre,
+      direccion: asignacion.obra.direccion,
+      estado: asignacion.obra.estado,
+      roleName: asignacion.role_name,
+      fecha_inicio: asignacion.obra.fecha_inicio,
+      fecha_fin: asignacion.obra.fecha_fin,
+    }));
+  }
+
+  /**
+   * Cambia el contexto de obra del usuario generando un nuevo JWT
+   */
+  async switchObra(
+    userId: number,
+    obraId: string,
+    sessionId: number,
+  ): Promise<{ token: string; tokenExpires: number; obraId: string }> {
+    // Validar que el usuario tenga acceso a la obra
+    const asignacion = await this.obraUsuarioRepository.findOne({
+      where: {
+        user_id: userId,
+        obra_id: obraId,
+      },
+    });
+
+    if (!asignacion) {
+      throw new UnprocessableEntityException({
+        status: HttpStatus.UNPROCESSABLE_ENTITY,
+        errors: {
+          obraId: 'noAccessToObra',
+        },
+      });
+    }
+
+    // Obtener el usuario completo
+    const user = await this.usersService.findById(userId);
+
+    if (!user || !user.role) {
+      throw new UnauthorizedException();
+    }
+
+    // Generar nuevo token con el obraId actualizado
+    const tokenExpiresIn = this.configService.getOrThrow('auth.expires', {
+      infer: true,
+    });
+
+    const tokenExpires = Date.now() + ms(tokenExpiresIn);
+
+    const token = await this.jwtService.signAsync(
+      {
+        id: user.id,
+        email: user.email!,
+        role: user.role,
+        sessionId,
+        obraId, // Incluir obraId en el payload del JWT
+      },
+      {
+        secret: this.configService.getOrThrow('auth.secret', { infer: true }),
+        expiresIn: tokenExpiresIn,
+      },
+    );
+
+    return {
+      token,
+      tokenExpires,
+      obraId,
     };
   }
 }

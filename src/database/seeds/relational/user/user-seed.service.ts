@@ -17,9 +17,7 @@ export class UserSeedService {
   async run() {
     const countAdmin = await this.repository.count({
       where: {
-        role: {
-          id: RoleEnum.admin,
-        },
+        role: { id: RoleEnum.admin },
       },
     });
 
@@ -33,23 +31,16 @@ export class UserSeedService {
           lastName: 'Admin',
           email: 'admin@example.com',
           password,
-          role: {
-            id: RoleEnum.admin,
-            name: 'Admin',
-          },
-          status: {
-            id: StatusEnum.active,
-            name: 'Active',
-          },
+          role: { id: RoleEnum.admin },
+          status: { id: StatusEnum.active },
+          provider: 'email',
         }),
       );
     }
 
     const countUser = await this.repository.count({
       where: {
-        role: {
-          id: RoleEnum.user,
-        },
+        role: { id: RoleEnum.user },
       },
     });
 
@@ -63,14 +54,9 @@ export class UserSeedService {
           lastName: 'Doe',
           email: 'john.doe@example.com',
           password,
-          role: {
-            id: RoleEnum.user,
-            name: 'Admin',
-          },
-          status: {
-            id: StatusEnum.active,
-            name: 'Active',
-          },
+          role: { id: RoleEnum.user },
+          status: { id: StatusEnum.active },
+          provider: 'email',
         }),
       );
     }
@@ -171,17 +157,16 @@ export class UserSeedService {
             lastName: userData.lastName,
             email: userData.email,
             password,
-            role: {
-              id: userData.roleId,
-              name: userData.roleName,
-            },
-            status: {
-              id: StatusEnum.active,
-              name: 'Active',
-            },
+            role: { id: userData.roleId },
+            status: { id: StatusEnum.active },
+            provider: 'email',
           }),
         );
-        console.log(`✅ Usuario creado: ${userData.email}`);
+        console.log(
+          `✅ Usuario creado: ${userData.email} (${userData.roleName})`,
+        );
+      } else {
+        console.log(`⚠️  Usuario ya existe: ${userData.email}`);
       }
     }
 

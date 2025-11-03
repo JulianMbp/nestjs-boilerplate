@@ -86,7 +86,9 @@ export class ObrasService {
     obraId: string,
     roleId: number,
   ): Promise<ObraUsuarioEntity> {
-    const user = await this.userRepository.findOne({ where: { id: userId } });
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+    });
     if (!user) {
       throw new NotFoundException(`Usuario con ID ${userId} no encontrado`);
     }
@@ -102,10 +104,9 @@ export class ObrasService {
     }
 
     const asignacion = this.obraUsuarioRepository.create({
-      user,
-      obra: { id: obraId } as any,
-      role,
-      fechaAsignacion: new Date(),
+      user_id: userId,
+      obra_id: obraId,
+      role_name: role.name,
     });
 
     return this.obraUsuarioRepository.save(asignacion);
@@ -113,7 +114,7 @@ export class ObrasService {
 
   async obtenerUsuariosObra(obraId: string): Promise<ObraUsuarioEntity[]> {
     return this.obraUsuarioRepository.find({
-      where: { obra: { id: obraId } },
+      where: { obra_id: obraId },
       relations: ['user', 'role'],
     });
   }

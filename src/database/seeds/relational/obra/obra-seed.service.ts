@@ -39,7 +39,7 @@ export class ObraSeedService {
         this.obraRepository.create({
           nombre: 'Edificio Central Plaza',
           direccion: 'Calle 100 #15-20, Bogotá D.C.',
-          administrador: adminObra1 || adminGeneral,
+          admin_id: adminObra1?.id || adminGeneral?.id,
         }),
       );
       console.log('✅ Obra creada: Edificio Central Plaza');
@@ -55,7 +55,7 @@ export class ObraSeedService {
         this.obraRepository.create({
           nombre: 'Torre Empresarial Norte',
           direccion: 'Av. El Poblado #43-50, Medellín',
-          administrador: adminObra2 || adminGeneral,
+          admin_id: adminObra2?.id || adminGeneral?.id,
         }),
       );
       console.log('✅ Obra creada: Torre Empresarial Norte');
@@ -71,7 +71,7 @@ export class ObraSeedService {
         this.obraRepository.create({
           nombre: 'Conjunto Residencial Alameda',
           direccion: 'Calle 170 #54-32, Bogotá D.C.',
-          administrador: adminGeneral,
+          admin_id: adminGeneral?.id,
         }),
       );
       console.log('✅ Obra creada: Conjunto Residencial Alameda');
@@ -87,7 +87,7 @@ export class ObraSeedService {
         this.obraRepository.create({
           nombre: 'Centro Comercial Portal del Sur',
           direccion: 'Autopista Sur Km 5, Bogotá D.C.',
-          administrador: adminObra1 || adminGeneral,
+          admin_id: adminObra1?.id || adminGeneral?.id,
         }),
       );
       console.log('✅ Obra creada: Centro Comercial Portal del Sur');

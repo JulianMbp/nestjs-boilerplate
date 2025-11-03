@@ -326,19 +326,17 @@ export class ObraUsuarioSeedService {
     for (const asignacion of asignaciones) {
       const existe = await this.obraUsuarioRepository.findOne({
         where: {
-          user: { id: asignacion.user.id },
-          obra: { id: asignacion.obra.id },
-          role: { id: asignacion.role.id },
+          user_id: asignacion.user.id,
+          obra_id: asignacion.obra.id,
         },
       });
 
       if (!existe) {
         await this.obraUsuarioRepository.save(
           this.obraUsuarioRepository.create({
-            user: asignacion.user,
-            obra: asignacion.obra,
-            role: asignacion.role,
-            fechaAsignacion: new Date(),
+            user_id: asignacion.user.id,
+            obra_id: asignacion.obra.id,
+            role_name: asignacion.roleName,
           }),
         );
         console.log(

@@ -20,7 +20,7 @@ export class CreateObraDto {
 
   @ApiProperty({
     example: 1,
-    description: 'ID del administrador de la obra',
+    description: 'ID del administrador de la obra (user table)',
     required: false,
   })
   @IsOptional()

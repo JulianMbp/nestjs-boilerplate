@@ -4,7 +4,7 @@ import { IsNotEmpty, IsNumber, IsUUID } from 'class-validator';
 export class AsignarUsuarioObraDto {
   @ApiProperty({
     example: 1,
-    description: 'ID del usuario',
+    description: 'ID del usuario (user table)',
   })
   @IsNotEmpty()
   @IsNumber()

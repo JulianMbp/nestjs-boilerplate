@@ -1,4 +1,3 @@
-import { UserMapper } from '../../../../../users/infrastructure/persistence/relational/mappers/user.mapper';
 import { Obra } from '../../../../domain/obra';
 import { ObraEntity } from '../entities/obra.entity';
 
@@ -7,13 +6,14 @@ export class ObraMapper {
     const domainEntity = new Obra();
     domainEntity.id = raw.id;
     domainEntity.nombre = raw.nombre;
-    domainEntity.direccion = raw.direccion;
-    domainEntity.createdAt = raw.createdAt;
-    domainEntity.updatedAt = raw.updatedAt;
+    domainEntity.direccion = raw.direccion ?? '';
+    domainEntity.createdAt = raw.created_at;
+    domainEntity.updatedAt = raw.updated_at;
 
-    if (raw.administrador) {
-      domainEntity.administrador = UserMapper.toDomain(raw.administrador);
-    }
+    // TODO: Fix mapper for UsuarioEntity
+    // if (raw.admin) {
+    //   domainEntity.administrador = UserMapper.toDomain(raw.admin);
+    // }
 
     return domainEntity;
   }
@@ -26,10 +26,10 @@ export class ObraMapper {
     persistenceEntity.nombre = domainEntity.nombre;
     persistenceEntity.direccion = domainEntity.direccion;
     if (domainEntity.createdAt) {
-      persistenceEntity.createdAt = domainEntity.createdAt;
+      persistenceEntity.created_at = domainEntity.createdAt;
     }
     if (domainEntity.updatedAt) {
-      persistenceEntity.updatedAt = domainEntity.updatedAt;
+      persistenceEntity.updated_at = domainEntity.updatedAt;
     }
 
     return persistenceEntity;

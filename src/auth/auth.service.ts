@@ -1,9 +1,9 @@
 import {
-    HttpStatus,
-    Injectable,
-    NotFoundException,
-    UnauthorizedException,
-    UnprocessableEntityException,
+  HttpStatus,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 import { ConfigService } from '@nestjs/config';

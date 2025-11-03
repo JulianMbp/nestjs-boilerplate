@@ -30,7 +30,6 @@ export class ObrasRelationalRepository {
     const entities = await this.obraRepository.find({
       skip: (paginationOptions.page - 1) * paginationOptions.limit,
       take: paginationOptions.limit,
-      relations: ['administrador'],
     });
 
     return entities.map((obra) => ObraMapper.toDomain(obra));
@@ -39,7 +38,6 @@ export class ObrasRelationalRepository {
   async findById(id: Obra['id']): Promise<NullableType<Obra>> {
     const entity = await this.obraRepository.findOne({
       where: { id },
-      relations: ['administrador'],
     });
 
     return entity ? ObraMapper.toDomain(entity) : null;

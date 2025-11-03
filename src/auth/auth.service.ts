@@ -1,33 +1,37 @@
 import {
-  HttpStatus,
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-  UnprocessableEntityException,
+    HttpStatus,
+    Injectable,
+    NotFoundException,
+    UnauthorizedException,
+    UnprocessableEntityException,
 } from '@nestjs/common';
-import ms from 'ms';
-import crypto from 'crypto';
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
-import { JwtService } from '@nestjs/jwt';
-import bcrypt from 'bcryptjs';
-import { AuthEmailLoginDto } from './dto/auth-email-login.dto';
-import { AuthUpdateDto } from './dto/auth-update.dto';
-import { AuthProvidersEnum } from './auth-providers.enum';
-import { SocialInterface } from '../social/interfaces/social.interface';
-import { AuthRegisterLoginDto } from './dto/auth-register-login.dto';
-import { NullableType } from '../utils/types/nullable.type';
-import { LoginResponseDto } from './dto/login-response.dto';
 import { ConfigService } from '@nestjs/config';
-import { JwtRefreshPayloadType } from './strategies/types/jwt-refresh-payload.type';
-import { JwtPayloadType } from './strategies/types/jwt-payload.type';
-import { UsersService } from '../users/users.service';
+import { JwtService } from '@nestjs/jwt';
+import { InjectRepository } from '@nestjs/typeorm';
+import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
+import ms from 'ms';
+import { Repository } from 'typeorm';
 import { AllConfigType } from '../config/config.type';
 import { MailService } from '../mail/mail.service';
+import { ObraUsuarioEntity } from '../obra-usuario/infrastructure/persistence/relational/entities/obra-usuario.entity';
 import { RoleEnum } from '../roles/roles.enum';
 import { Session } from '../session/domain/session';
 import { SessionService } from '../session/session.service';
+import { SocialInterface } from '../social/interfaces/social.interface';
 import { StatusEnum } from '../statuses/statuses.enum';
 import { User } from '../users/domain/user';
+import { UsersService } from '../users/users.service';
+import { NullableType } from '../utils/types/nullable.type';
+import { AuthProvidersEnum } from './auth-providers.enum';
+import { AuthEmailLoginIngenieriaDto } from './dto/auth-email-login-ingenieria.dto';
+import { AuthEmailLoginDto } from './dto/auth-email-login.dto';
+import { AuthRegisterLoginDto } from './dto/auth-register-login.dto';
+import { AuthUpdateDto } from './dto/auth-update.dto';
+import { LoginResponseDto } from './dto/login-response.dto';
+import { JwtPayloadType } from './strategies/types/jwt-payload.type';
+import { JwtRefreshPayloadType } from './strategies/types/jwt-refresh-payload.type';
 
 @Injectable()
 export class AuthService {
@@ -37,6 +41,8 @@ export class AuthService {
     private sessionService: SessionService,
     private mailService: MailService,
     private configService: ConfigService<AllConfigType>,
+    @InjectRepository(ObraUsuarioEntity)
+    private readonly obraUsuarioRepository: Repository<ObraUsuarioEntity>,
   ) {}
 
   async validateLogin(loginDto: AuthEmailLoginDto): Promise<LoginResponseDto> {
@@ -98,6 +104,101 @@ export class AuthService {
       role: user.role,
       sessionId: session.id,
       hash,
+    });
+
+    return {
+      refreshToken,
+      token,
+      tokenExpires,
+      user,
+    };
+  }
+
+  // Login para IngenierIA con soporte de obra_id opcional
+  async validateLoginIngenieria(
+    loginDto: AuthEmailLoginIngenieriaDto,
+  ): Promise<LoginResponseDto> {
+    const user = await this.usersService.findByEmail(loginDto.email);
+
+    if (!user) {
+      throw new UnprocessableEntityException({
+        status: HttpStatus.UNPROCESSABLE_ENTITY,
+        errors: {
+          email: 'notFound',
+        },
+      });
+    }
+
+    if (user.provider !== AuthProvidersEnum.email) {
+      throw new UnprocessableEntityException({
+        status: HttpStatus.UNPROCESSABLE_ENTITY,
+        errors: {
+          email: `needLoginViaProvider:${user.provider}`,
+        },
+      });
+    }
+
+    if (!user.password) {
+      throw new UnprocessableEntityException({
+        status: HttpStatus.UNPROCESSABLE_ENTITY,
+        errors: {
+          password: 'incorrectPassword',
+        },
+      });
+    }
+
+    const isValidPassword = await bcrypt.compare(
+      loginDto.password,
+      user.password,
+    );
+
+    if (!isValidPassword) {
+      throw new UnprocessableEntityException({
+        status: HttpStatus.UNPROCESSABLE_ENTITY,
+        errors: {
+          password: 'incorrectPassword',
+        },
+      });
+    }
+
+    // Si se especificó una obra, verificar que el usuario tenga acceso
+    const obraId: string | undefined = loginDto.obraId;
+    if (obraId && typeof user.id === 'number') {
+      const asignacion = await this.obraUsuarioRepository.findOne({
+        where: {
+          user: { id: user.id as number },
+          obra: { id: obraId },
+        },
+        relations: ['role', 'obra'],
+      });
+
+      if (!asignacion) {
+        throw new UnauthorizedException({
+          status: HttpStatus.UNAUTHORIZED,
+          errors: {
+            obra: 'noAccess',
+          },
+        });
+      }
+    }
+
+    const hash = crypto
+      .createHash('sha256')
+      .update(randomStringGenerator())
+      .digest('hex');
+
+    const session = await this.sessionService.create({
+      user,
+      hash,
+    });
+
+    const { token, refreshToken, tokenExpires } = await this.getTokensData({
+      id: user.id,
+      role: user.role,
+      sessionId: session.id,
+      hash,
+      email: user.email,
+      obra_id: obraId,
     });
 
     return {
@@ -549,6 +650,8 @@ export class AuthService {
     role: User['role'];
     sessionId: Session['id'];
     hash: Session['hash'];
+    email?: User['email'];
+    obra_id?: string;
   }) {
     const tokenExpiresIn = this.configService.getOrThrow('auth.expires', {
       infer: true,
@@ -562,6 +665,8 @@ export class AuthService {
           id: data.id,
           role: data.role,
           sessionId: data.sessionId,
+          ...(data.email && { email: data.email }),
+          ...(data.obra_id && { obra_id: data.obra_id }),
         },
         {
           secret: this.configService.getOrThrow('auth.secret', { infer: true }),

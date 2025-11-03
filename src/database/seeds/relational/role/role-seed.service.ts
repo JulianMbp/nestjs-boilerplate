@@ -23,6 +23,7 @@ export class RoleSeedService {
         this.repository.create({
           id: RoleEnum.user,
           name: 'User',
+          descripcion: 'Usuario regular del sistema',
         }),
       );
     }
@@ -38,8 +39,65 @@ export class RoleSeedService {
         this.repository.create({
           id: RoleEnum.admin,
           name: 'Admin',
+          descripcion: 'Administrador del sistema',
         }),
       );
+    }
+
+    // Roles IngenierIA
+    const rolesIngenierIA = [
+      {
+        id: RoleEnum.admin_general,
+        name: 'Admin General',
+        descripcion: 'Administrador general del sistema IngenierIA',
+      },
+      {
+        id: RoleEnum.admin_obra,
+        name: 'Admin Obra',
+        descripcion: 'Administrador de una obra específica',
+      },
+      {
+        id: RoleEnum.encargado_area,
+        name: 'Encargado de Área',
+        descripcion: 'Responsable de un área dentro de la obra',
+      },
+      {
+        id: RoleEnum.obrero,
+        name: 'Obrero',
+        descripcion: 'Trabajador operativo de la obra',
+      },
+      {
+        id: RoleEnum.sst,
+        name: 'SST',
+        descripcion: 'Responsable de Seguridad y Salud en el Trabajo',
+      },
+      {
+        id: RoleEnum.compras,
+        name: 'Compras',
+        descripcion: 'Encargado de compras y suministros',
+      },
+      {
+        id: RoleEnum.rrhh,
+        name: 'RRHH',
+        descripcion: 'Recursos Humanos',
+      },
+      {
+        id: RoleEnum.consultor,
+        name: 'Consultor',
+        descripcion: 'Consultor externo del proyecto',
+      },
+    ];
+
+    for (const roleData of rolesIngenierIA) {
+      const count = await this.repository.count({
+        where: {
+          id: roleData.id,
+        },
+      });
+
+      if (!count) {
+        await this.repository.save(this.repository.create(roleData));
+      }
     }
   }
 }

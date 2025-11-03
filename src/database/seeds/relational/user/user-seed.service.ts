@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
-import { Repository } from 'typeorm';
 import bcrypt from 'bcryptjs';
+import { Repository } from 'typeorm';
 import { RoleEnum } from '../../../../roles/roles.enum';
 import { StatusEnum } from '../../../../statuses/statuses.enum';
 import { UserEntity } from '../../../../users/infrastructure/persistence/relational/entities/user.entity';
@@ -66,6 +66,37 @@ export class UserSeedService {
           role: {
             id: RoleEnum.user,
             name: 'Admin',
+          },
+          status: {
+            id: StatusEnum.active,
+            name: 'Active',
+          },
+        }),
+      );
+    }
+
+    // Usuario Admin General para IngenierIA
+    const countAdminGeneral = await this.repository.count({
+      where: {
+        role: {
+          id: RoleEnum.admin_general,
+        },
+      },
+    });
+
+    if (!countAdminGeneral) {
+      const salt = await bcrypt.genSalt(10);
+      const password = await bcrypt.hash('AdminIngenieria2024!', salt);
+
+      await this.repository.save(
+        this.repository.create({
+          firstName: 'Admin',
+          lastName: 'General',
+          email: 'admin.general@ingenieria.com',
+          password,
+          role: {
+            id: RoleEnum.admin_general,
+            name: 'Admin General',
           },
           status: {
             id: StatusEnum.active,

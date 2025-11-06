@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Allow } from 'class-validator';
 
-const idType = Number;
+const idType = String;
 
 export class Status {
   @Allow()

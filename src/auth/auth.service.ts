@@ -5,33 +5,29 @@ import {
   UnauthorizedException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
-import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
-import { InjectRepository } from '@nestjs/typeorm';
-import bcrypt from 'bcryptjs';
-import crypto from 'crypto';
 import ms from 'ms';
-import { Repository } from 'typeorm';
+import crypto from 'crypto';
+import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
+import { JwtService } from '@nestjs/jwt';
+import bcrypt from 'bcryptjs';
+import { AuthEmailLoginDto } from './dto/auth-email-login.dto';
+import { AuthUpdateDto } from './dto/auth-update.dto';
+import { AuthProvidersEnum } from './auth-providers.enum';
+import { SocialInterface } from '../social/interfaces/social.interface';
+import { AuthRegisterLoginDto } from './dto/auth-register-login.dto';
+import { NullableType } from '../utils/types/nullable.type';
+import { LoginResponseDto } from './dto/login-response.dto';
+import { ConfigService } from '@nestjs/config';
+import { JwtRefreshPayloadType } from './strategies/types/jwt-refresh-payload.type';
+import { JwtPayloadType } from './strategies/types/jwt-payload.type';
+import { UsersService } from '../users/users.service';
 import { AllConfigType } from '../config/config.type';
 import { MailService } from '../mail/mail.service';
-import { ObraUsuarioEntity } from '../obra-usuario/infrastructure/persistence/relational/entities/obra-usuario.entity';
 import { RoleEnum } from '../roles/roles.enum';
 import { Session } from '../session/domain/session';
 import { SessionService } from '../session/session.service';
-import { SocialInterface } from '../social/interfaces/social.interface';
 import { StatusEnum } from '../statuses/statuses.enum';
 import { User } from '../users/domain/user';
-import { UsersService } from '../users/users.service';
-import { NullableType } from '../utils/types/nullable.type';
-import { AuthProvidersEnum } from './auth-providers.enum';
-import { AuthEmailLoginDto } from './dto/auth-email-login.dto';
-import { AuthRegisterLoginDto } from './dto/auth-register-login.dto';
-import { AuthUpdateDto } from './dto/auth-update.dto';
-import { LoginResponseDto } from './dto/login-response.dto';
-import { ObraConRoleDto } from './dto/obra-con-role.dto';
-import { JwtPayloadType } from './strategies/types/jwt-payload.type';
-import { JwtRefreshPayloadType } from './strategies/types/jwt-refresh-payload.type';
 
 @Injectable()
 export class AuthService {
@@ -41,8 +37,6 @@ export class AuthService {
     private sessionService: SessionService,
     private mailService: MailService,
     private configService: ConfigService<AllConfigType>,
-    @InjectRepository(ObraUsuarioEntity)
-    private obraUsuarioRepository: Repository<ObraUsuarioEntity>,
   ) {}
 
   async validateLogin(loginDto: AuthEmailLoginDto): Promise<LoginResponseDto> {
@@ -101,7 +95,6 @@ export class AuthService {
 
     const { token, refreshToken, tokenExpires } = await this.getTokensData({
       id: user.id,
-      email: user.email!,
       role: user.role,
       sessionId: session.id,
       hash,
@@ -187,7 +180,6 @@ export class AuthService {
       tokenExpires,
     } = await this.getTokensData({
       id: user.id,
-      email: user.email!,
       role: user.role,
       sessionId: session.id,
       hash,
@@ -530,7 +522,6 @@ export class AuthService {
 
     const { token, refreshToken, tokenExpires } = await this.getTokensData({
       id: session.user.id,
-      email: user.email!,
       role: {
         id: user.role.id,
       },
@@ -555,15 +546,10 @@ export class AuthService {
 
   private async getTokensData(data: {
     id: User['id'];
-    email: string;
     role: User['role'];
     sessionId: Session['id'];
     hash: Session['hash'];
-  }): Promise<{
-    token: string;
-    refreshToken: string;
-    tokenExpires: number;
-  }> {
+  }) {
     const tokenExpiresIn = this.configService.getOrThrow('auth.expires', {
       infer: true,
     });
@@ -574,7 +560,6 @@ export class AuthService {
       await this.jwtService.signAsync(
         {
           id: data.id,
-          email: data.email,
           role: data.role,
           sessionId: data.sessionId,
         },
@@ -603,86 +588,6 @@ export class AuthService {
       token,
       refreshToken,
       tokenExpires,
-    };
-  }
-
-  /**
-   * Retorna todas las obras a las que el usuario tiene acceso
-   */
-  async getMyObras(userId: number): Promise<ObraConRoleDto[]> {
-    const asignaciones = await this.obraUsuarioRepository.find({
-      where: { user_id: userId },
-      relations: ['obra'],
-    });
-
-    return asignaciones.map((asignacion) => ({
-      id: asignacion.obra.id,
-      nombre: asignacion.obra.nombre,
-      direccion: asignacion.obra.direccion,
-      estado: asignacion.obra.estado,
-      roleName: asignacion.role_name,
-      fecha_inicio: asignacion.obra.fecha_inicio,
-      fecha_fin: asignacion.obra.fecha_fin,
-    }));
-  }
-
-  /**
-   * Cambia el contexto de obra del usuario generando un nuevo JWT
-   */
-  async switchObra(
-    userId: number,
-    obraId: string,
-    sessionId: number,
-  ): Promise<{ token: string; tokenExpires: number; obraId: string }> {
-    // Validar que el usuario tenga acceso a la obra
-    const asignacion = await this.obraUsuarioRepository.findOne({
-      where: {
-        user_id: userId,
-        obra_id: obraId,
-      },
-    });
-
-    if (!asignacion) {
-      throw new UnprocessableEntityException({
-        status: HttpStatus.UNPROCESSABLE_ENTITY,
-        errors: {
-          obraId: 'noAccessToObra',
-        },
-      });
-    }
-
-    // Obtener el usuario completo
-    const user = await this.usersService.findById(userId);
-
-    if (!user || !user.role) {
-      throw new UnauthorizedException();
-    }
-
-    // Generar nuevo token con el obraId actualizado
-    const tokenExpiresIn = this.configService.getOrThrow('auth.expires', {
-      infer: true,
-    });
-
-    const tokenExpires = Date.now() + ms(tokenExpiresIn);
-
-    const token = await this.jwtService.signAsync(
-      {
-        id: user.id,
-        email: user.email!,
-        role: user.role,
-        sessionId,
-        obraId, // Incluir obraId en el payload del JWT
-      },
-      {
-        secret: this.configService.getOrThrow('auth.secret', { infer: true }),
-        expiresIn: tokenExpiresIn,
-      },
-    );
-
-    return {
-      token,
-      tokenExpires,
-      obraId,
     };
   }
 }

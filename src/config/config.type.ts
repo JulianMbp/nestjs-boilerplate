@@ -6,6 +6,7 @@ import { DatabaseConfig } from '../database/config/database-config.type';
 import { FileConfig } from '../files/config/file-config.type';
 import { MailConfig } from '../mail/config/mail-config.type';
 import { AppConfig } from './app-config.type';
+import { OpenAIConfig } from './openai-config.type';
 import { SupabaseConfig } from './supabase-config.type';
 
 export type AllConfigType = {
@@ -17,5 +18,6 @@ export type AllConfigType = {
   file: FileConfig;
   google: GoogleConfig;
   mail: MailConfig;
+  openai: OpenAIConfig;
   supabase: SupabaseConfig;
 };

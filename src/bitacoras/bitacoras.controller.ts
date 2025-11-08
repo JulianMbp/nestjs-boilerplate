@@ -13,6 +13,8 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ChatObraDto } from '../ai/dto/chat-obra.dto';
+import { GenerarBitacoraAiDto } from '../ai/dto/generar-bitacora-ai.dto';
 import { TenantGuard } from '../common/guards/tenant.guard';
 import { TransformResponseInterceptor } from '../common/interceptors/transform-response.interceptor';
 import { BitacorasService } from './bitacoras.service';
@@ -82,5 +84,60 @@ export class BitacorasController {
   ) {
     const usuarioId = req.user.id;
     return this.bitacorasService.deleteInObra(id, obraId, usuarioId);
+  }
+
+  @Post('generar-informe-ia')
+  @ApiOperation({
+    summary: 'Generar informe de bitácora usando IA',
+    description:
+      'Genera un informe HTML de bitácora usando IA. El informe incluye información de la obra, materiales, tareas recientes y bitácoras anteriores. Devuelve el HTML en formato JSON para que el frontend pueda generar el PDF.',
+  })
+  async generarInformeIA(
+    @Param('obraId', ParseUUIDPipe) obraId: string,
+    @Request() req: any,
+    @Body() dto: GenerarBitacoraAiDto,
+  ) {
+    const usuarioId = req.user.id;
+    const resultado = await this.bitacorasService.generarInformeConIA(
+      obraId,
+      usuarioId,
+      dto,
+    );
+
+    // Retornar en formato JSON con el HTML en data
+    return {
+      success: true,
+      data: {
+        html: resultado.html,
+        tokensUsados: resultado.tokensUsados,
+      },
+      message: 'Informe generado exitosamente',
+    };
+  }
+
+  @Post('chat')
+  @ApiOperation({
+    summary: 'Chat con IA sobre la obra',
+    description:
+      'Haz preguntas sobre la obra y recibe respuestas basadas en la información disponible (materiales, tareas, bitácoras, etc.). La IA responde como un experto que conoce la obra.',
+  })
+  async chatObra(
+    @Param('obraId', ParseUUIDPipe) obraId: string,
+    @Body() dto: ChatObraDto,
+  ) {
+    const resultado = await this.bitacorasService.responderPreguntaObra(
+      obraId,
+      dto.mensaje,
+    );
+
+    // Retornar en formato JSON con la respuesta
+    return {
+      success: true,
+      data: {
+        respuesta: resultado.respuesta,
+        tokensUsados: resultado.tokensUsados,
+      },
+      message: 'Respuesta generada exitosamente',
+    };
   }
 }

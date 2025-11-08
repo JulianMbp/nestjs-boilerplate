@@ -4,4 +4,3 @@ export enum TareaPrioridad {
   ALTA = 'alta',
   URGENTE = 'urgente',
 }
-

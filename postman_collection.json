@@ -936,6 +936,119 @@
             },
             "description": "Actualizar una entrada de bitácora existente en la obra"
           }
+        },
+        {
+          "name": "4.6 Generar Informe con IA",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has HTML', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.be.an('object');",
+                  "    pm.expect(jsonData.data.html).to.be.a('string');",
+                  "    pm.expect(jsonData.data.html.length).to.be.above(0);",
+                  "    console.log('HTML generado: ' + jsonData.data.html.substring(0, 100) + '...');",
+                  "    console.log('Tokens usados: ' + jsonData.data.tokensUsados);",
+                  "    ",
+                  "    // Guardar el HTML en una variable de entorno para uso posterior",
+                  "    pm.environment.set('generatedHtml', jsonData.data.html);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"actividades\": [\n    \"Vaciado de losa de concreto en el nivel 12\",\n    \"Instalación de ductos HVAC en sector norte\",\n    \"Revisión y ajuste de instalaciones eléctricas\",\n    \"Aplicación de impermeabilizante en azotea\"\n  ],\n  \"avanceGeneral\": 76,\n  \"clima\": \"Soleado, 25°C\",\n  \"incidencias\": [\n    \"Retraso de 2 horas en la entrega de hormigón\",\n    \"Neblina matutina que retrasó inicio de trabajos\"\n  ],\n  \"observaciones\": \"Trabajo realizado según lo planeado. Se requieren ajustes menores en la instalación eléctrica del sector norte. El personal trabajó de manera eficiente y se cumplieron los objetivos del día.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/obras/{{obraId}}/bitacoras/generar-informe-ia",
+              "host": ["{{baseUrl}}"],
+              "path": ["obras", "{{obraId}}", "bitacoras", "generar-informe-ia"]
+            },
+            "description": "Genera un informe HTML de bitácora usando IA. El informe incluye información de la obra (materiales, tareas recientes, bitácoras anteriores) combinada con los datos proporcionados por el usuario. El HTML está listo para ser convertido a PDF en el frontend."
+          }
+        },
+        {
+          "name": "4.7 Chat con IA sobre la Obra",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has answer', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.be.an('object');",
+                  "    pm.expect(jsonData.data.respuesta).to.be.a('string');",
+                  "    pm.expect(jsonData.data.respuesta.length).to.be.above(0);",
+                  "    console.log('Respuesta de la IA: ' + jsonData.data.respuesta);",
+                  "    console.log('Tokens usados: ' + jsonData.data.tokensUsados);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mensaje\": \"¿Cuántos materiales tiene esta obra?\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/obras/{{obraId}}/bitacoras/chat",
+              "host": ["{{baseUrl}}"],
+              "path": ["obras", "{{obraId}}", "bitacoras", "chat"]
+            },
+            "description": "Haz preguntas sobre la obra y recibe respuestas basadas en la información disponible (materiales, tareas, bitácoras, etc.). La IA responde como un experto que conoce la obra. Ejemplos de preguntas: '¿Cuántos materiales tiene esta obra?', '¿Cuál es el avance actual?', '¿Qué tareas están en progreso?', '¿Hay alguna incidencia reportada?'"
+          }
         }
       ]
     },

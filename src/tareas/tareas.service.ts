@@ -70,12 +70,12 @@ export class TareasService {
     updateTareaDto: UpdateTareaDto,
   ): Promise<TareaEntity> {
     const tarea = await this.findOneByIdInObra(id, obraId);
-    
+
     // If asignado_a_id is being updated, ensure it's not null
     if (updateTareaDto.asignado_a_id !== undefined) {
       tarea.asignado_a_id = updateTareaDto.asignado_a_id;
     }
-    
+
     // Update other fields
     if (updateTareaDto.titulo !== undefined) {
       tarea.titulo = updateTareaDto.titulo;

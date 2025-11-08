@@ -6,11 +6,8 @@ import { UserEntity } from '../../../../users/infrastructure/persistence/relatio
 import { TareaSeedService } from './tarea-seed.service';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([TareaEntity, ObraEntity, UserEntity]),
-  ],
+  imports: [TypeOrmModule.forFeature([TareaEntity, ObraEntity, UserEntity])],
   providers: [TareaSeedService],
   exports: [TareaSeedService],
 })
 export class TareaSeedModule {}
-

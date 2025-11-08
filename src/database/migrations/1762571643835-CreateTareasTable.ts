@@ -126,7 +126,8 @@ export class CreateTareasTable1762571643835 implements MigrationInterface {
         );
       }
 
-      const avancePorcentajeColumn = table.findColumnByName('avance_porcentaje');
+      const avancePorcentajeColumn =
+        table.findColumnByName('avance_porcentaje');
       if (!avancePorcentajeColumn) {
         await queryRunner.query(
           `ALTER TABLE "tareas" ADD COLUMN "avance_porcentaje" NUMERIC(5,2)`,

@@ -1,11 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import {
-    IsDateString,
-    IsEnum,
-    IsNotEmpty,
-    IsOptional,
-    IsString,
+  IsDateString,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
 } from 'class-validator';
 import { AsistenciaEstado } from '../asistencia-estado.enum';
 

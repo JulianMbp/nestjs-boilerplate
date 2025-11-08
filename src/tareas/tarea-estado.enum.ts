@@ -4,4 +4,3 @@ export enum TareaEstado {
   COMPLETADA = 'completada',
   CANCELADA = 'cancelada',
 }
-

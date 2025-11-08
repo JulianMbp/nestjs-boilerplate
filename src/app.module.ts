@@ -5,6 +5,7 @@ import { HeaderResolver, I18nModule } from 'nestjs-i18n';
 import path from 'path';
 import { DataSource, DataSourceOptions } from 'typeorm';
 import { ActivityLogsModule } from './activity-logs/activity-logs.module';
+import { AiModule } from './ai/ai.module';
 import { AsistenciasModule } from './asistencias/asistencias.module';
 import { AuthAppleModule } from './auth-apple/auth-apple.module';
 import appleConfig from './auth-apple/config/apple.config';
@@ -17,6 +18,7 @@ import authConfig from './auth/config/auth.config';
 import { BitacorasModule } from './bitacoras/bitacoras.module';
 import appConfig from './config/app.config';
 import { AllConfigType } from './config/config.type';
+import openaiConfig from './config/openai.config';
 import supabaseConfig from './config/supabase.config';
 import databaseConfig from './database/config/database.config';
 import { TypeOrmConfigService } from './database/typeorm-config.service';
@@ -55,6 +57,7 @@ const infrastructureDatabaseModule = TypeOrmModule.forRootAsync({
         googleConfig,
         appleConfig,
         supabaseConfig,
+        openaiConfig,
       ],
       envFilePath: ['.env'],
     }),
@@ -85,6 +88,7 @@ const infrastructureDatabaseModule = TypeOrmModule.forRootAsync({
     UsersModule,
     FilesModule,
     AuthModule,
+    AiModule,
     ObrasModule,
     MaterialesModule,
     BitacorasModule,

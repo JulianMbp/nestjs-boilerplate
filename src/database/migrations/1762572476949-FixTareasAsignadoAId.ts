@@ -80,7 +80,8 @@ export class FixTareasAsignadoAId1762572476949 implements MigrationInterface {
       }
 
       // Add avance_porcentaje if it doesn't exist
-      const avancePorcentajeColumn = table.findColumnByName('avance_porcentaje');
+      const avancePorcentajeColumn =
+        table.findColumnByName('avance_porcentaje');
       if (!avancePorcentajeColumn) {
         await queryRunner.query(`
           ALTER TABLE "tareas" 
@@ -114,4 +115,3 @@ export class FixTareasAsignadoAId1762572476949 implements MigrationInterface {
     }
   }
 }
-

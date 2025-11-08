@@ -24,7 +24,9 @@ export class TareaSeedService {
     // Obtener obras
     const obras = await this.obraRepository.find();
     if (obras.length === 0) {
-      console.log('⚠️  No hay obras disponibles. Por favor ejecuta primero el seeder de obras.');
+      console.log(
+        '⚠️  No hay obras disponibles. Por favor ejecuta primero el seeder de obras.',
+      );
       return;
     }
 
@@ -34,7 +36,9 @@ export class TareaSeedService {
     });
 
     if (usuarios.length === 0) {
-      console.log('⚠️  No hay usuarios disponibles. Por favor ejecuta primero el seeder de usuarios.');
+      console.log(
+        '⚠️  No hay usuarios disponibles. Por favor ejecuta primero el seeder de usuarios.',
+      );
       return;
     }
 
@@ -45,7 +49,9 @@ export class TareaSeedService {
       });
 
       if (tareasCount > 0) {
-        console.log(`⚠️  La obra "${obra.nombre}" ya tiene tareas. Omitiendo...`);
+        console.log(
+          `⚠️  La obra "${obra.nombre}" ya tiene tareas. Omitiendo...`,
+        );
         continue;
       }
 
@@ -62,7 +68,8 @@ export class TareaSeedService {
           usuario_id: creador.id,
           asignado_a_id: asignado1.id,
           titulo: 'Revisión de planos arquitectónicos',
-          descripcion: 'Revisar y aprobar los planos arquitectónicos de la estructura principal',
+          descripcion:
+            'Revisar y aprobar los planos arquitectónicos de la estructura principal',
           estado: TareaEstado.EN_PROGRESO,
           prioridad: TareaPrioridad.ALTA,
           avance_porcentaje: 45,
@@ -74,7 +81,8 @@ export class TareaSeedService {
           usuario_id: creador.id,
           asignado_a_id: asignado2.id,
           titulo: 'Preparación del terreno',
-          descripcion: 'Nivelación y preparación del terreno para la construcción',
+          descripcion:
+            'Nivelación y preparación del terreno para la construcción',
           estado: TareaEstado.PENDIENTE,
           prioridad: TareaPrioridad.ALTA,
           avance_porcentaje: 0,
@@ -86,7 +94,8 @@ export class TareaSeedService {
           usuario_id: creador.id,
           asignado_a_id: asignado3.id,
           titulo: 'Compra de materiales de construcción',
-          descripcion: 'Gestionar la compra de cemento, varillas y otros materiales necesarios',
+          descripcion:
+            'Gestionar la compra de cemento, varillas y otros materiales necesarios',
           estado: TareaEstado.PENDIENTE,
           prioridad: TareaPrioridad.MEDIA,
           avance_porcentaje: 0,
@@ -97,7 +106,8 @@ export class TareaSeedService {
           usuario_id: creador.id,
           asignado_a_id: asignado1.id,
           titulo: 'Instalación de servicios básicos',
-          descripcion: 'Coordinación con empresas de servicios públicos para instalación de agua, luz y gas',
+          descripcion:
+            'Coordinación con empresas de servicios públicos para instalación de agua, luz y gas',
           estado: TareaEstado.PENDIENTE,
           prioridad: TareaPrioridad.MEDIA,
           avance_porcentaje: 0,
@@ -108,7 +118,8 @@ export class TareaSeedService {
           usuario_id: creador.id,
           asignado_a_id: asignado2.id,
           titulo: 'Supervisión de cimentación',
-          descripcion: 'Supervisar el proceso de cimentación y asegurar que cumpla con los estándares',
+          descripcion:
+            'Supervisar el proceso de cimentación y asegurar que cumpla con los estándares',
           estado: TareaEstado.COMPLETADA,
           prioridad: TareaPrioridad.URGENTE,
           avance_porcentaje: 100,
@@ -122,10 +133,11 @@ export class TareaSeedService {
         tareas.map((tarea) => this.tareaRepository.create(tarea)),
       );
 
-      console.log(`✅ ${tareas.length} tareas creadas para la obra "${obra.nombre}"`);
+      console.log(
+        `✅ ${tareas.length} tareas creadas para la obra "${obra.nombre}"`,
+      );
     }
 
     console.log('✅ Seeders de tareas ejecutados correctamente');
   }
 }
-

@@ -10,6 +10,7 @@ import {
   JoinColumn,
   OneToOne,
 } from 'typeorm';
+import { Exclude } from 'class-transformer';
 import { RoleEntity } from '../../../../../roles/infrastructure/persistence/relational/entities/role.entity';
 import { StatusEntity } from '../../../../../statuses/infrastructure/persistence/relational/entities/status.entity';
 import { FileEntity } from '../../../../../files/infrastructure/persistence/relational/entities/file.entity';
@@ -29,6 +30,7 @@ export class UserEntity extends EntityRelationalHelper {
   @Column({ type: String, unique: true, nullable: true })
   email: string | null;
 
+  @Exclude({ toPlainOnly: true })
   @Column({ nullable: true })
   password?: string;
 

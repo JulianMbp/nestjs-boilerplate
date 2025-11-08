@@ -11,6 +11,7 @@ import { ObraUsuarioSeedModule } from './obra-usuario/obra-usuario-seed.module';
 import { ObraSeedModule } from './obra/obra-seed.module';
 import { RoleSeedModule } from './role/role-seed.module';
 import { StatusSeedModule } from './status/status-seed.module';
+import { TareaSeedModule } from './tarea/tarea-seed.module';
 import { UserSeedModule } from './user/user-seed.module';
 
 @Module({
@@ -20,6 +21,7 @@ import { UserSeedModule } from './user/user-seed.module';
     UserSeedModule,
     ObraSeedModule,
     ObraUsuarioSeedModule,
+    TareaSeedModule,
     IngenieriaDemoDataSeedModule,
     ConfigModule.forRoot({
       isGlobal: true,

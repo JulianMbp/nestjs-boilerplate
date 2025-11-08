@@ -31,6 +31,7 @@ import { MaterialesModule } from './materiales/materiales.module';
 import { ObrasModule } from './obras/obras.module';
 import { PresupuestosModule } from './presupuestos/presupuestos.module';
 import { SessionModule } from './session/session.module';
+import { TareasModule } from './tareas/tareas.module';
 import { UsersModule } from './users/users.module';
 
 const infrastructureDatabaseModule = TypeOrmModule.forRootAsync({
@@ -90,6 +91,7 @@ const infrastructureDatabaseModule = TypeOrmModule.forRootAsync({
     AsistenciasModule,
     PresupuestosModule,
     DocumentosModule,
+    TareasModule,
     ActivityLogsModule,
     AuthFacebookModule,
     AuthGoogleModule,

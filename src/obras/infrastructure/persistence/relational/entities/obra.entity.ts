@@ -17,6 +17,7 @@ import { DocumentoEntity } from '../../../../../documentos/infrastructure/persis
 import { MaterialEntity } from '../../../../../materiales/infrastructure/persistence/relational/entities/material.entity';
 import { ObraUsuarioEntity } from '../../../../../obra-usuario/infrastructure/persistence/relational/entities/obra-usuario.entity';
 import { PresupuestoEntity } from '../../../../../presupuestos/infrastructure/persistence/relational/entities/presupuesto.entity';
+import { TareaEntity } from '../../../../../tareas/infrastructure/persistence/relational/entities/tarea.entity';
 import { UserEntity } from '../../../../../users/infrastructure/persistence/relational/entities/user.entity';
 import { EntityRelationalHelper } from '../../../../../utils/relational-entity-helper';
 
@@ -70,6 +71,9 @@ export class ObraEntity extends EntityRelationalHelper {
 
   @OneToMany(() => PresupuestoEntity, (presupuesto) => presupuesto.obra)
   presupuestos?: PresupuestoEntity[];
+
+  @OneToMany(() => TareaEntity, (tarea) => tarea.obra)
+  tareas?: TareaEntity[];
 
   @OneToMany(() => ActivityLogEntity, (log) => log.obra)
   activityLogs?: ActivityLogEntity[];

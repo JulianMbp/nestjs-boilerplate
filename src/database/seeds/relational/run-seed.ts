@@ -6,6 +6,7 @@ import { ObraSeedService } from './obra/obra-seed.service';
 import { RoleSeedService } from './role/role-seed.service';
 import { SeedModule } from './seed.module';
 import { StatusSeedService } from './status/status-seed.service';
+import { TareaSeedService } from './tarea/tarea-seed.service';
 import { UserSeedService } from './user/user-seed.service';
 
 const cleanDatabase = async (dataSource: DataSource) => {
@@ -17,6 +18,7 @@ const cleanDatabase = async (dataSource: DataSource) => {
     // 1. Limpiar tablas de IngenierIA
     console.log('🗑️  Limpiando tablas de IngenierIA...');
     await dataSource.query('DELETE FROM "activity_logs"');
+    await dataSource.query('DELETE FROM "tareas"');
     await dataSource.query('DELETE FROM "presupuestos"');
     await dataSource.query('DELETE FROM "documentos"');
     await dataSource.query('DELETE FROM "asistencias"');
@@ -88,12 +90,13 @@ const runSeed = async () => {
   // Paso 2: Ejecutar seeders en orden
   console.log('📝 Ejecutando seeders...\n');
 
-  // Orden de ejecución: Roles → Status → Users → Obras → Obra-Usuario → Datos Demo
+  // Orden de ejecución: Roles → Status → Users → Obras → Obra-Usuario → Tareas → Datos Demo
   await app.get(RoleSeedService).run();
   await app.get(StatusSeedService).run();
   await app.get(UserSeedService).run();
   await app.get(ObraSeedService).run();
   await app.get(ObraUsuarioSeedService).run();
+  await app.get(TareaSeedService).run();
   await app.get(IngenieriaDemoDataSeedService).run();
 
   console.log('\n✅ Todos los seeders ejecutados correctamente');

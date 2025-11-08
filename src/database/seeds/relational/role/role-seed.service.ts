@@ -89,14 +89,26 @@ export class RoleSeedService {
     ];
 
     for (const roleData of rolesIngenierIA) {
-      const count = await this.repository.count({
+      const existingRole = await this.repository.findOne({
         where: {
           id: roleData.id,
         },
       });
 
-      if (!count) {
+      if (!existingRole) {
+        // Crear el rol si no existe
         await this.repository.save(this.repository.create(roleData));
+      } else {
+        // Actualizar el rol si existe pero ha cambiado
+        if (
+          existingRole.name !== roleData.name ||
+          existingRole.descripcion !== roleData.descripcion
+        ) {
+          await this.repository.update(roleData.id, {
+            name: roleData.name,
+            descripcion: roleData.descripcion,
+          });
+        }
       }
     }
   }

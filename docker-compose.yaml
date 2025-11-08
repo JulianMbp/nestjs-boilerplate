@@ -36,6 +36,28 @@ services:
       dockerfile: Dockerfile
     ports:
       - ${APP_PORT}:${APP_PORT}
+    depends_on:
+      - postgres
+      - maildev
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - APP_PORT=${APP_PORT}
+      - DATABASE_TYPE=${DATABASE_TYPE}
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_USERNAME=${DATABASE_USERNAME}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - DATABASE_NAME=${DATABASE_NAME}
+      - DATABASE_SYNCHRONIZE=${DATABASE_SYNCHRONIZE:-false}
+      - DATABASE_MAX_CONNECTIONS=${DATABASE_MAX_CONNECTIONS:-100}
+      - DATABASE_SSL_ENABLED=${DATABASE_SSL_ENABLED:-false}
+      - MAIL_HOST=maildev
+      - MAIL_PORT=${MAIL_PORT:-1025}
+      - MAIL_CLIENT_PORT=${MAIL_CLIENT_PORT:-1080}
+      - AUTH_JWT_SECRET=${AUTH_JWT_SECRET}
+      - AUTH_REFRESH_SECRET=${AUTH_REFRESH_SECRET}
+      - AUTH_FORGOT_SECRET=${AUTH_FORGOT_SECRET}
+      - AUTH_CONFIRM_EMAIL_SECRET=${AUTH_CONFIRM_EMAIL_SECRET}
 
 volumes:
   boilerplate-db:

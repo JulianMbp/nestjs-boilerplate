@@ -7,6 +7,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
   Request,
   UseGuards,
   UseInterceptors,
@@ -44,9 +45,18 @@ export class BitacorasController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all bitácoras for an obra' })
-  findAll(@Param('obraId', ParseUUIDPipe) obraId: string) {
-    return this.bitacorasService.findAllByObra(obraId);
+  @ApiOperation({
+    summary: 'Get all bitácoras for an obra',
+    description:
+      'Obtiene todas las bitácoras de una obra. Puede filtrar por tipo usando el query parameter generada_por_ia (true para IA, false para manuales)',
+  })
+  findAll(
+    @Param('obraId', ParseUUIDPipe) obraId: string,
+    @Query('generada_por_ia') generadaPorIa?: string,
+  ) {
+    const filtroIa =
+      generadaPorIa !== undefined ? generadaPorIa === 'true' : undefined;
+    return this.bitacorasService.findAllByObra(obraId, filtroIa);
   }
 
   @Get(':id')
@@ -90,7 +100,7 @@ export class BitacorasController {
   @ApiOperation({
     summary: 'Generar informe de bitácora usando IA',
     description:
-      'Genera un informe HTML de bitácora usando IA. El informe incluye información de la obra, materiales, tareas recientes y bitácoras anteriores. Devuelve el HTML en formato JSON para que el frontend pueda generar el PDF.',
+      'Genera un informe HTML de bitácora usando IA y lo guarda automáticamente en la base de datos. El informe incluye información de la obra, materiales, tareas recientes y bitácoras anteriores. Devuelve el HTML en formato JSON para que el frontend pueda generar el PDF, junto con la bitácora guardada.',
   })
   async generarInformeIA(
     @Param('obraId', ParseUUIDPipe) obraId: string,
@@ -104,14 +114,15 @@ export class BitacorasController {
       dto,
     );
 
-    // Retornar en formato JSON con el HTML en data
+    // Retornar en formato JSON con el HTML en data y la bitácora guardada
     return {
       success: true,
       data: {
         html: resultado.html,
         tokensUsados: resultado.tokensUsados,
+        bitacora: resultado.bitacora,
       },
-      message: 'Informe generado exitosamente',
+      message: 'Informe generado y guardado exitosamente',
     };
   }
 

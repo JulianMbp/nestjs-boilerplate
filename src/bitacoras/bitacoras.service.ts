@@ -36,13 +36,22 @@ export class BitacorasService {
       ...createBitacoraDto,
       obra_id: obraId,
       usuario_id: usuarioId,
+      generada_por_ia: false, // Las bitácoras creadas manualmente no son generadas por IA
     });
     return this.bitacoraRepository.save(bitacora);
   }
 
-  async findAllByObra(obraId: string): Promise<BitacoraEntity[]> {
+  async findAllByObra(
+    obraId: string,
+    generadaPorIa?: boolean,
+  ): Promise<BitacoraEntity[]> {
+    const where: any = { obra_id: obraId };
+    if (generadaPorIa !== undefined) {
+      where.generada_por_ia = generadaPorIa;
+    }
+
     return this.bitacoraRepository.find({
-      where: { obra_id: obraId },
+      where,
       order: { fecha: 'DESC', created_at: 'DESC' },
       relations: ['usuario'],
     });
@@ -97,7 +106,7 @@ export class BitacorasService {
     obraId: string,
     usuarioId: number,
     dto: GenerarBitacoraAiDto,
-  ): Promise<{ html: string; tokensUsados?: number }> {
+  ): Promise<{ html: string; tokensUsados?: number; bitacora?: BitacoraEntity }> {
     // 1. Obtener información de la obra
     const obra = await this.obrasService.findOne(obraId);
     if (!obra) {
@@ -167,7 +176,24 @@ export class BitacorasService {
       },
     });
 
-    return resultado;
+    // 10. Guardar la bitácora generada por IA en la base de datos
+    const descripcion = `Bitácora generada por IA - ${dto.actividades.join(', ')}`;
+    const bitacora = this.bitacoraRepository.create({
+      obra_id: obraId,
+      usuario_id: usuarioId,
+      descripcion: descripcion,
+      avance_porcentaje: dto.avanceGeneral,
+      fecha: new Date(fecha),
+      generada_por_ia: true,
+      archivos: [],
+    });
+    const bitacoraGuardada = await this.bitacoraRepository.save(bitacora);
+
+    return {
+      html: resultado.html,
+      tokensUsados: resultado.tokensUsados,
+      bitacora: bitacoraGuardada,
+    };
   }
 
   async responderPreguntaObra(

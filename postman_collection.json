@@ -462,6 +462,10 @@
                   "    pm.expect(jsonData.data).to.be.an('array');",
                   "    if (jsonData.data.length > 0) {",
                   "        pm.environment.set('materialId', jsonData.data[0].id);",
+                  "        // Verificar que incluye cantidad_faltante",
+                  "        if (jsonData.data[0].cantidad_faltante !== undefined) {",
+                  "            console.log('Cantidad faltante: ' + jsonData.data[0].cantidad_faltante);",
+                  "        }",
                   "    }",
                   "});"
                 ],
@@ -562,6 +566,15 @@
                   "    var jsonData = pm.response.json();",
                   "    pm.expect(jsonData.id).to.be.a('string');",
                   "    pm.expect(jsonData.nombre).to.be.a('string');",
+                  "    // Verificar que incluye cantidad_faltante calculada",
+                  "    if (jsonData.cantidad_faltante !== undefined) {",
+                  "        pm.expect(jsonData.cantidad_faltante).to.be.a('number');",
+                  "        console.log('Cantidad faltante: ' + jsonData.cantidad_faltante);",
+                  "    }",
+                  "    // Verificar campos de seguimiento",
+                  "    if (jsonData.estado !== undefined) {",
+                  "        pm.expect(jsonData.estado).to.be.oneOf(['pendiente', 'comprado', 'en_transito', 'disponible']);",
+                  "    }",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -603,6 +616,15 @@
                   "pm.test('Material created', function () {",
                   "    var jsonData = pm.response.json();",
                   "    pm.expect(jsonData.id).to.be.a('string');",
+                  "    // Verificar que incluye cantidad_faltante calculada",
+                  "    if (jsonData.cantidad_faltante !== undefined) {",
+                  "        pm.expect(jsonData.cantidad_faltante).to.be.a('number');",
+                  "        console.log('Cantidad faltante calculada: ' + jsonData.cantidad_faltante);",
+                  "    }",
+                  "    // Verificar campos de seguimiento",
+                  "    if (jsonData.estado) {",
+                  "        pm.expect(jsonData.estado).to.be.oneOf(['pendiente', 'comprado', 'en_transito', 'disponible']);",
+                  "    }",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -629,7 +651,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombre\": \"Material de Prueba\",\n  \"descripcion\": \"Material creado desde Postman\",\n  \"unidadMedida\": \"unidad\",\n  \"cantidadDisponible\": 100,\n  \"precioUnitario\": 25.50\n}"
+              "raw": "{\n  \"nombre\": \"Cemento Portland\",\n  \"categoria\": \"Materiales de construcción\",\n  \"cantidad\": 100,\n  \"cantidad_disponible\": 50,\n  \"cantidad_requerida\": 100,\n  \"unidad\": \"bolsas\",\n  \"proveedor\": \"Cementos del Norte\",\n  \"estado\": \"pendiente\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/obras/{{obraId}}/materiales",
@@ -640,7 +662,65 @@
           }
         },
         {
-          "name": "3.5 Actualizar Material",
+          "name": "3.5 Filtrar Materiales por Estado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Filtered by status', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    var materiales = Array.isArray(jsonData) ? jsonData : (jsonData.data || jsonData);",
+                  "    pm.expect(materiales).to.be.an('array');",
+                  "    if (materiales.length > 0) {",
+                  "        // Verificar que todos tienen el estado esperado",
+                  "        materiales.forEach(function(material) {",
+                  "            pm.expect(material.estado).to.be.oneOf(['pendiente', 'comprado', 'en_transito', 'disponible']);",
+                  "            // Verificar que incluye cantidad_faltante",
+                  "            if (material.cantidad_faltante !== undefined) {",
+                  "                console.log('Material: ' + material.nombre + ', Faltante: ' + material.cantidad_faltante);",
+                  "            }",
+                  "        });",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/obras/{{obraId}}/materiales",
+              "host": ["{{baseUrl}}"],
+              "path": ["obras", "{{obraId}}", "materiales"],
+              "query": [
+                {
+                  "key": "filters[estado]",
+                  "value": "$eq:pendiente"
+                }
+              ]
+            },
+            "description": "Filtrar materiales por estado. Valores posibles: pendiente, comprado, en_transito, disponible"
+          }
+        },
+        {
+          "name": "3.6 Actualizar Material",
           "event": [
             {
               "listen": "test",
@@ -653,6 +733,11 @@
                   "pm.test('Material updated', function () {",
                   "    var jsonData = pm.response.json();",
                   "    pm.expect(jsonData.id).to.exist;",
+                  "    // Verificar que incluye cantidad_faltante recalculada",
+                  "    if (jsonData.cantidad_faltante !== undefined) {",
+                  "        pm.expect(jsonData.cantidad_faltante).to.be.a('number');",
+                  "        console.log('Cantidad faltante actualizada: ' + jsonData.cantidad_faltante);",
+                  "    }",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -679,7 +764,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"cantidadDisponible\": 150,\n  \"precioUnitario\": 27.00\n}"
+              "raw": "{\n  \"cantidad_disponible\": 75,\n  \"cantidad_requerida\": 100,\n  \"estado\": \"comprado\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/obras/{{obraId}}/materiales/{{materialId}}",
@@ -707,9 +792,15 @@
                   "",
                   "pm.test('Response has bitacoras', function () {",
                   "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.data).to.be.an('array');",
-                  "    if (jsonData.data.length > 0) {",
-                  "        pm.environment.set('bitacoraId', jsonData.data[0].id);",
+                  "    // El endpoint puede retornar directamente un array o un objeto con data",
+                  "    var bitacoras = Array.isArray(jsonData) ? jsonData : (jsonData.data || jsonData);",
+                  "    pm.expect(bitacoras).to.be.an('array');",
+                  "    if (bitacoras.length > 0) {",
+                  "        pm.environment.set('bitacoraId', bitacoras[0].id);",
+                  "        // Verificar que incluye el campo generada_por_ia",
+                  "        if (bitacoras[0].generada_por_ia !== undefined) {",
+                  "            console.log('Bitácora generada por IA: ' + bitacoras[0].generada_por_ia);",
+                  "        }",
                   "    }",
                   "});"
                 ],
@@ -749,7 +840,65 @@
           }
         },
         {
-          "name": "4.2 Filtrar por Fecha",
+          "name": "4.2 Filtrar Bitácoras por Tipo (IA/Manual)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Filtered by type', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    // El endpoint puede retornar directamente un array o un objeto con data",
+                  "    var bitacoras = Array.isArray(jsonData) ? jsonData : (jsonData.data || jsonData);",
+                  "    pm.expect(bitacoras).to.be.an('array');",
+                  "    if (bitacoras.length > 0) {",
+                  "        // Verificar que todas las bitácoras son generadas por IA",
+                  "        bitacoras.forEach(function(bitacora) {",
+                  "            pm.expect(bitacora.generada_por_ia).to.be.true;",
+                  "        });",
+                  "        console.log('Encontradas ' + bitacoras.length + ' bitácoras generadas por IA');",
+                  "    } else {",
+                  "        console.log('No se encontraron bitácoras generadas por IA');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/obras/{{obraId}}/bitacoras?generada_por_ia=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["obras", "{{obraId}}", "bitacoras"],
+              "query": [
+                {
+                  "key": "generada_por_ia",
+                  "value": "true"
+                }
+              ]
+            },
+            "description": "Filtrar bitácoras generadas por IA. Usa generada_por_ia=false para filtrar bitácoras manuales, o omite el parámetro para obtener todas."
+          }
+        },
+        {
+          "name": "4.3 Filtrar por Fecha",
           "event": [
             {
               "listen": "test",
@@ -796,7 +945,7 @@
           }
         },
         {
-          "name": "4.3 Obtener Bitácora por ID",
+          "name": "4.4 Obtener Bitácora por ID",
           "event": [
             {
               "listen": "test",
@@ -838,7 +987,7 @@
           }
         },
         {
-          "name": "4.4 Crear Bitácora",
+          "name": "4.5 Crear Bitácora",
           "event": [
             {
               "listen": "test",
@@ -888,7 +1037,7 @@
           }
         },
         {
-          "name": "4.5 Actualizar Bitácora",
+          "name": "4.6 Actualizar Bitácora",
           "event": [
             {
               "listen": "test",
@@ -938,7 +1087,7 @@
           }
         },
         {
-          "name": "4.6 Generar Informe con IA",
+          "name": "4.7 Generar Informe con IA",
           "event": [
             {
               "listen": "test",
@@ -957,8 +1106,15 @@
                   "    console.log('HTML generado: ' + jsonData.data.html.substring(0, 100) + '...');",
                   "    console.log('Tokens usados: ' + jsonData.data.tokensUsados);",
                   "    ",
+                  "    // Verificar que la bitácora fue guardada",
+                  "    pm.expect(jsonData.data.bitacora).to.be.an('object');",
+                  "    pm.expect(jsonData.data.bitacora.generada_por_ia).to.be.true;",
+                  "    pm.expect(jsonData.data.bitacora.id).to.be.a('string');",
+                  "    console.log('Bitácora guardada con ID: ' + jsonData.data.bitacora.id);",
+                  "    ",
                   "    // Guardar el HTML en una variable de entorno para uso posterior",
                   "    pm.environment.set('generatedHtml', jsonData.data.html);",
+                  "    pm.environment.set('bitacoraId', jsonData.data.bitacora.id);",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -996,7 +1152,7 @@
           }
         },
         {
-          "name": "4.7 Chat con IA sobre la Obra",
+          "name": "4.8 Chat con IA sobre la Obra",
           "event": [
             {
               "listen": "test",

@@ -706,13 +706,14 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/obras/{{obraId}}/materiales",
+              "raw": "{{baseUrl}}/obras/{{obraId}}/materiales?estado=pendiente",
               "host": ["{{baseUrl}}"],
               "path": ["obras", "{{obraId}}", "materiales"],
               "query": [
                 {
-                  "key": "filters[estado]",
-                  "value": "$eq:pendiente"
+                  "key": "estado",
+                  "value": "pendiente",
+                  "description": "Filtrar por estado: pendiente, comprado, en_transito, disponible"
                 }
               ]
             },

@@ -7,11 +7,12 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { TenantGuard } from '../common/guards/tenant.guard';
@@ -42,8 +43,16 @@ export class MaterialesController {
   }
 
   @Get()
-  findAll(@Param('obraId', ParseUUIDPipe) obraId: string) {
-    return this.materialesService.findAllByObra(obraId);
+  @ApiOperation({
+    summary: 'Get all materials for an obra',
+    description:
+      'Obtiene todos los materiales de una obra. Puede filtrar por estado usando el query parameter estado (pendiente, comprado, en_transito, disponible)',
+  })
+  findAll(
+    @Param('obraId', ParseUUIDPipe) obraId: string,
+    @Query('estado') estado?: string,
+  ) {
+    return this.materialesService.findAllByObra(obraId, estado);
   }
 
   @Get(':id')

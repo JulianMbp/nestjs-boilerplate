@@ -24,15 +24,30 @@ export class RolesGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
     const user = request.user;
 
-    if (!user || !user.role) {
+    // Priorizar el rol de obra_usuario (después de TenantGuard)
+    // Si no está disponible, usar el rol del JWT (rol base del usuario)
+    let userRoleName: string | undefined;
+
+    if (request.obraUsuario?.role_name) {
+      // Usar el rol de obra_usuario (rol específico por obra)
+      userRoleName = request.obraUsuario.role_name;
+    } else if (user?.role?.name) {
+      // Fallback al rol del JWT (rol base del usuario)
+      userRoleName = user.role.name;
+    }
+
+    if (!userRoleName) {
       throw new ForbiddenException('User role not found');
     }
 
-    const hasRole = requiredRoles.some((role) => user.role.name === role);
+    // Comparar roles (case-insensitive)
+    const hasRole = requiredRoles.some(
+      (role) => userRoleName.toLowerCase() === role.toLowerCase(),
+    );
 
     if (!hasRole) {
       throw new ForbiddenException(
-        `User does not have required role. Required: ${requiredRoles.join(', ')}`,
+        `User does not have required role. Required: ${requiredRoles.join(', ')}. Current role: ${userRoleName}`,
       );
     }
 

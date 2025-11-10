@@ -33,6 +33,13 @@
    - `cantidad_faltante: number` (calculado automáticamente)
    - Los campos enviados en el request también aparecen en la respuesta
 
+3. **Filtro opcional:** `GET /materiales?estado=pendiente`
+   - Sin parámetro = todos (comportamiento anterior)
+   - `pendiente` = solo pendientes
+   - `comprado` = solo comprados
+   - `en_transito` = solo en tránsito
+   - `disponible` = solo disponibles
+
 ---
 
 ## 📝 Interfaces TypeScript
@@ -64,6 +71,7 @@ Si quieres aprovechar las nuevas funcionalidades:
 - Muestra badge "Generada por IA" en bitácoras
 - Agrega filtro por tipo en lista de bitácoras
 - Muestra estado y cantidad faltante en materiales
+- Agrega filtro por estado en lista de materiales
 - Permite editar campos de seguimiento en formulario de materiales
 
 ---

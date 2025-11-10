@@ -219,6 +219,34 @@ Si no se envió `cantidad_requerida`, se usa `cantidad` como referencia.
 
 ---
 
+### 2.3 Nuevo Filtro Opcional en Listar Materiales
+
+**Endpoint:** `GET /api/v1/obras/:obraId/materiales`
+
+**Query Parameter Nuevo (opcional):**
+- `estado=pendiente` - Solo materiales pendientes
+- `estado=comprado` - Solo materiales comprados
+- `estado=en_transito` - Solo materiales en tránsito
+- `estado=disponible` - Solo materiales disponibles
+- Sin parámetro - Todos los materiales (comportamiento anterior)
+
+**Ejemplos:**
+
+```typescript
+// Obtener todos los materiales (comportamiento anterior)
+GET /api/v1/obras/{obraId}/materiales
+
+// Obtener solo materiales pendientes
+GET /api/v1/obras/{obraId}/materiales?estado=pendiente
+
+// Obtener solo materiales comprados
+GET /api/v1/obras/{obraId}/materiales?estado=comprado
+```
+
+**Acción requerida:** Ninguna. Si no envías el parámetro, funciona igual que antes.
+
+---
+
 ## 📊 Resumen de Compatibilidad
 
 | Endpoint | Cambio | Requerido | Retrocompatible |
@@ -226,6 +254,7 @@ Si no se envió `cantidad_requerida`, se usa `cantidad` como referencia.
 | `GET /bitacoras` | Campo `generada_por_ia` en respuesta | ❌ No | ✅ Sí |
 | `GET /bitacoras` | Query param `generada_por_ia` | ❌ No | ✅ Sí |
 | `POST /bitacoras/generar-informe-ia` | Campo `bitacora` en respuesta | ❌ No | ✅ Sí |
+| `GET /materiales` | Query param `estado` | ❌ No | ✅ Sí |
 | `POST /materiales` | Campos opcionales nuevos | ❌ No | ✅ Sí |
 | `PATCH /materiales/:id` | Campos opcionales nuevos | ❌ No | ✅ Sí |
 | Respuestas materiales | Campos nuevos en respuesta | ❌ No | ✅ Sí |
@@ -254,14 +283,25 @@ Si no se envió `cantidad_requerida`, se usa `cantidad` como referencia.
 
 ### Materiales
 
-1. **Badge de estado:**
+1. **Filtros por estado:**
+   ```tsx
+   <FilterButtons>
+     <Button onClick={() => fetchMateriales()}>Todos</Button>
+     <Button onClick={() => fetchMateriales('pendiente')}>Pendientes</Button>
+     <Button onClick={() => fetchMateriales('comprado')}>Comprados</Button>
+     <Button onClick={() => fetchMateriales('en_transito')}>En Tránsito</Button>
+     <Button onClick={() => fetchMateriales('disponible')}>Disponibles</Button>
+   </FilterButtons>
+   ```
+
+2. **Badge de estado:**
    ```tsx
    <Badge color={getEstadoColor(material.estado)}>
      {material.estado}
    </Badge>
    ```
 
-2. **Barra de progreso:**
+3. **Barra de progreso:**
    ```tsx
    <ProgressBar
      current={material.cantidad_disponible}
@@ -270,7 +310,7 @@ Si no se envió `cantidad_requerida`, se usa `cantidad` como referencia.
    />
    ```
 
-3. **Alerta de faltante:**
+4. **Alerta de faltante:**
    ```tsx
    {material.cantidad_faltante > 0 && (
      <Alert type="warning">
@@ -381,6 +421,30 @@ const bitacorasIA = await bitacorasPorTipo(obraId, true);
 const bitacorasManuales = await bitacorasPorTipo(obraId, false);
 ```
 
+### Ejemplo de Filtro (Materiales)
+
+```typescript
+// Obtener todos los materiales (sin cambios)
+const todosLosMateriales = async (obraId: string) => {
+  const response = await fetch(`/api/v1/obras/${obraId}/materiales`);
+  return response.json();
+};
+
+// Filtrar por estado (nuevo)
+const materialesPorEstado = async (obraId: string, estado?: string) => {
+  const url = estado
+    ? `/api/v1/obras/${obraId}/materiales?estado=${estado}`
+    : `/api/v1/obras/${obraId}/materiales`;
+  
+  const response = await fetch(url);
+  return response.json();
+};
+
+// Uso
+const materialesPendientes = await materialesPorEstado(obraId, 'pendiente');
+const materialesComprados = await materialesPorEstado(obraId, 'comprado');
+```
+
 ---
 
 ## ✅ Checklist para Frontend
@@ -390,6 +454,7 @@ const bitacorasManuales = await bitacorasPorTipo(obraId, false);
 - [ ] (Opcional) Mostrar badge "Generada por IA" en bitácoras
 - [ ] (Opcional) Agregar filtro por tipo en lista de bitácoras
 - [ ] (Opcional) Mostrar estado y cantidad faltante en materiales
+- [ ] (Opcional) Agregar filtro por estado en lista de materiales
 - [ ] (Opcional) Agregar campos de seguimiento al formulario de materiales
 
 ---

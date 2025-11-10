@@ -42,9 +42,14 @@ export class MaterialesService {
 
   async findAllByObra(
     obraId: string,
+    estado?: string,
   ): Promise<(MaterialEntity & { cantidad_faltante: number })[]> {
+    const where: any = { obra_id: obraId };
+    if (estado) {
+      where.estado = estado;
+    }
     const materiales = await this.materialRepository.find({
-      where: { obra_id: obraId },
+      where,
       order: { created_at: 'DESC' },
     });
 

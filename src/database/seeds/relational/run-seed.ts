@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { randomUUID } from 'crypto';
 import { DataSource } from 'typeorm';
 import { IngenieriaDemoDataSeedService } from './ingenieria-demo/ingenieria-demo-data-seed.service';
 import { ObraUsuarioSeedService } from './obra-usuario/obra-usuario-seed.service';
@@ -8,6 +9,13 @@ import { SeedModule } from './seed.module';
 import { StatusSeedService } from './status/status-seed.service';
 import { TareaSeedService } from './tarea/tarea-seed.service';
 import { UserSeedService } from './user/user-seed.service';
+
+// Asegurar que crypto esté disponible globalmente para TypeORM
+if (typeof global.crypto === 'undefined') {
+  global.crypto = {
+    randomUUID,
+  } as any;
+}
 
 const cleanDatabase = async (dataSource: DataSource) => {
   console.log('🧹 Limpiando base de datos...\n');

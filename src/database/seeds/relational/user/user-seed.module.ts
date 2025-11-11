@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
+import { RoleEntity } from '../../../../roles/infrastructure/persistence/relational/entities/role.entity';
 import { UserEntity } from '../../../../users/infrastructure/persistence/relational/entities/user.entity';
 import { UserSeedService } from './user-seed.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([UserEntity])],
+  imports: [TypeOrmModule.forFeature([UserEntity, RoleEntity])],
   providers: [UserSeedService],
   exports: [UserSeedService],
 })

@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import bcrypt from 'bcryptjs';
 import { Repository } from 'typeorm';
+import { RoleEntity } from '../../../../roles/infrastructure/persistence/relational/entities/role.entity';
 import { RoleEnum } from '../../../../roles/roles.enum';
 import { StatusEnum } from '../../../../statuses/statuses.enum';
 import { UserEntity } from '../../../../users/infrastructure/persistence/relational/entities/user.entity';
@@ -12,9 +13,13 @@ export class UserSeedService {
   constructor(
     @InjectRepository(UserEntity)
     private repository: Repository<UserEntity>,
+    @InjectRepository(RoleEntity)
+    private roleRepository: Repository<RoleEntity>,
   ) {}
 
   async run() {
+    console.log('🔄 Ejecutando seeder de usuarios...\n');
+
     const countAdmin = await this.repository.count({
       where: {
         role: { id: RoleEnum.admin },
@@ -146,8 +151,23 @@ export class UserSeedService {
     ];
 
     for (const userData of ingenieriaUsers) {
+      // Verificar que el rol existe antes de crear el usuario
+      const role = await this.roleRepository.findOne({
+        where: { id: userData.roleId },
+      });
+
+      if (!role) {
+        console.error(
+          `❌ Error: El rol con id ${userData.roleId} (${userData.roleName}) no existe. No se puede crear el usuario ${userData.email}`,
+        );
+        throw new Error(
+          `El rol ${userData.roleName} (id: ${userData.roleId}) no existe en la base de datos. Asegúrate de que los seeders de roles se ejecuten antes que los seeders de usuarios.`,
+        );
+      }
+
       const existingUser = await this.repository.findOne({
         where: { email: userData.email },
+        relations: ['role'],
       });
 
       if (!existingUser) {
@@ -163,10 +183,22 @@ export class UserSeedService {
           }),
         );
         console.log(
-          `✅ Usuario creado: ${userData.email} (${userData.roleName})`,
+          `✅ Usuario creado: ${userData.email} (${userData.roleName}, rol id: ${userData.roleId})`,
         );
       } else {
-        console.log(`⚠️  Usuario ya existe: ${userData.email}`);
+        // Actualizar el rol del usuario existente si es necesario
+        const currentRoleId = existingUser.role?.id;
+        if (currentRoleId !== userData.roleId) {
+          existingUser.role = role; // Usar el rol que ya verificamos que existe
+          await this.repository.save(existingUser);
+          console.log(
+            `🔄 Usuario actualizado: ${userData.email} - Rol cambiado de ${currentRoleId || 'ninguno'} a ${userData.roleName} (id: ${userData.roleId})`,
+          );
+        } else {
+          console.log(
+            `ℹ️  Usuario ya existe: ${userData.email} con rol ${userData.roleName} (id: ${userData.roleId})`,
+          );
+        }
       }
     }
 

@@ -12,6 +12,9 @@ export class RoleSeedService {
   ) {}
 
   async run() {
+    console.log('🔄 Ejecutando seeder de roles...\n');
+
+    // Crear roles base (User y Admin)
     const countUser = await this.repository.count({
       where: {
         id: RoleEnum.user,
@@ -26,6 +29,9 @@ export class RoleSeedService {
           descripcion: 'Usuario regular del sistema',
         }),
       );
+      console.log('✅ Rol creado: User (id: 2)');
+    } else {
+      console.log('ℹ️  Rol User ya existe (id: 2)');
     }
 
     const countAdmin = await this.repository.count({
@@ -42,6 +48,9 @@ export class RoleSeedService {
           descripcion: 'Administrador del sistema',
         }),
       );
+      console.log('✅ Rol creado: Admin (id: 1)');
+    } else {
+      console.log('ℹ️  Rol Admin ya existe (id: 1)');
     }
 
     // Roles IngenierIA
@@ -98,6 +107,9 @@ export class RoleSeedService {
       if (!existingRole) {
         // Crear el rol si no existe
         await this.repository.save(this.repository.create(roleData));
+        console.log(
+          `✅ Rol creado: ${roleData.name} (id: ${roleData.id})`,
+        );
       } else {
         // Actualizar el rol si existe pero ha cambiado
         if (
@@ -108,8 +120,17 @@ export class RoleSeedService {
             name: roleData.name,
             descripcion: roleData.descripcion,
           });
+          console.log(
+            `🔄 Rol actualizado: ${roleData.name} (id: ${roleData.id})`,
+          );
+        } else {
+          console.log(
+            `ℹ️  Rol ${roleData.name} ya existe (id: ${roleData.id})`,
+          );
         }
       }
     }
+
+    console.log('✅ Seeder de roles ejecutado correctamente\n');
   }
 }

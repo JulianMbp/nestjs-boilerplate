@@ -11,10 +11,10 @@ export class RolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const roles = this.reflector.getAllAndOverride<string[]>('roles', [
-      context.getClass(),
-      context.getHandler(),
-    ]);
+    const roles = this.reflector.getAllAndOverride<(number | string)[]>(
+      'roles',
+      [context.getClass(), context.getHandler()],
+    );
 
     if (!roles || !roles.length) {
       return true;
@@ -23,20 +23,46 @@ export class RolesGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
     const user = request.user;
 
-    if (!user || !user.role || !user.role.name) {
+    if (!user || !user.role) {
       throw new UnauthorizedException(
         'User role information is missing from token',
       );
     }
 
-    // Check if user's role name matches any of the allowed roles
-    const hasRole = roles.some((role) =>
-      user.role.name.toLowerCase().includes(role.toLowerCase()),
-    );
+    // Get user's role ID and name
+    const userRoleId = user.role?.id;
+    const userRoleName = user.role?.name?.toLowerCase() || '';
+
+    if (!userRoleId && !userRoleName) {
+      throw new UnauthorizedException(
+        'User role information is invalid in token',
+      );
+    }
+
+    // Check if user's role matches any of the allowed roles
+    // Roles can be: RoleEnum (number) or role name (string)
+    const hasRole = roles.some((allowedRole) => {
+      // If allowedRole is a number (RoleEnum), compare by ID
+      if (typeof allowedRole === 'number') {
+        return userRoleId === allowedRole;
+      }
+
+      // If allowedRole is a string, compare by name (case-insensitive)
+      if (typeof allowedRole === 'string') {
+        const allowedRoleLower = allowedRole.toLowerCase();
+        // Check exact match or if role name contains the allowed role
+        return (
+          userRoleName === allowedRoleLower ||
+          userRoleName.includes(allowedRoleLower)
+        );
+      }
+
+      return false;
+    });
 
     if (!hasRole) {
       throw new UnauthorizedException(
-        `You do not have the necessary permissions to access this resource. Required roles: ${roles.join(', ')}`,
+        `You do not have the necessary permissions to access this resource. Required roles: ${roles.join(', ')}. Your role: ${userRoleName || userRoleId}`,
       );
     }
 
